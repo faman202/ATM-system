@@ -461,7 +461,7 @@
       </div><!-- Reset Confirm Panel -->
       <div id="panel-reset" class="panel" role="region" aria-label="Reset Session">
        <h2 class="text-lg font-bold text-red-400 mb-1">Reset Session?</h2>
-       <p class="text-slate-400 text-sm mb-6">This will reset your balance to ৳২,০০০.০০ and clear all transaction history. This cannot be undone.</p>
+       <p class="text-slate-400 text-sm mb-6">This will reset your balance to ৳१,०००.०० and clear all transaction history. This cannot be undone.</p>
        <div class="flex gap-3"><button class="action-btn flex-1" onclick="doReset()" style="background: linear-gradient(135deg, #ef4444, #dc2626); color:white; box-shadow: 0 4px 15px rgba(239,68,68,0.3);"> Yes, Reset </button> <button class="action-btn btn-secondary flex-1" onclick="showPanel('balance')">Cancel</button>
        </div>
       </div>
@@ -631,7 +631,7 @@
       totalDeposited = 0;
       totalWithdrawn = 0;
       transactions = [];
-      showToast('🔄 Session reset to ৳২,০০০.০০', 'rgba(99,179,237,0.8)');
+      showToast('🔄 Session reset to ৳१,०००.००', 'rgba(99,179,237,0.8)');
       showPanel('balance');
     }
 

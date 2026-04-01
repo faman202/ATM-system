@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATM System</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&amp;family=DM+Mono:wght@300;400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background-color: #0a0e1a;
+      color: #e8eaf6;
+      margin: 0;
+    }
+
+    .mono { font-family: 'DM Mono', monospace; }
+
+    /* Animated background grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,179,237,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,179,237,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-card {
+      background: linear-gradient(145deg, #111827, #0f172a);
+      border: 1px solid rgba(99,179,237,0.2);
+      box-shadow: 0 0 40px rgba(99,179,237,0.05), inset 0 1px 0 rgba(255,255,255,0.05);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glow-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99,179,237,0.5), transparent);
+    }
+
+    .atm-card {
+      background: linear-gradient(135deg, #1a2744 0%, #0d1b35 50%, #111827 100%);
+      border: 1px solid rgba(99,179,237,0.3);
+      border-radius: 24px;
+      box-shadow:
+        0 25px 60px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(99,179,237,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .balance-display {
+      background: linear-gradient(135deg, #0d1b35, #111827);
+      border: 1px solid rgba(99,179,237,0.25);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .balance-display::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; right: -20px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,179,237,0.1), transparent 70%);
+    }
+
+    .balance-amount {
+      font-family: 'DM Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #63b3ed, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+
+    .menu-btn {
+      background: linear-gradient(145deg, #1e293b, #151f30);
+      border: 1px solid rgba(99,179,237,0.2);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      width: 100%;
+      color: #cbd5e1;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .menu-btn:hover {
+      background: linear-gradient(145deg, #243044, #1a2538);
+      border-color: rgba(99,179,237,0.5);
+      color: #e8eaf6;
+      transform: translateX(4px);
+      box-shadow: 0 4px 20px rgba(99,179,237,0.1);
+    }
+
+    .menu-btn:focus-visible {
+      outline: 2px solid #63b3ed;
+      outline-offset: 2px;
+    }
+
+    .menu-btn .btn-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .action-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .action-btn:focus-visible {
+      outline: 2px solid #63b3ed;
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59,130,246,0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid rgba(99,179,237,0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(99,179,237,0.08);
+      color: #cbd5e1;
+    }
+
+    .atm-input {
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(99,179,237,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #e8eaf6;
+      font-family: 'DM Mono', monospace;
+      font-size: 1.1rem;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .atm-input:focus {
+      outline: none;
+      border-color: rgba(99,179,237,0.6);
+      box-shadow: 0 0 0 3px rgba(99,179,237,0.1);
+    }
+
+    .atm-input::placeholder { color: #475569; }
+
+    .panel {
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+
+    .panel.active { display: block; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(99,179,237,0.1);
+      margin-bottom: 8px;
+      animation: slideIn 0.2s ease;
+    }
+
+    .chip {
+      width: 42px; height: 30px;
+      background: linear-gradient(135deg, #d4a843, #f0c060);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .chip-lines {
+      width: 28px; height: 18px;
+      border: 1.5px solid rgba(0,0,0,0.3);
+      border-radius: 3px;
+      display: grid;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .chip-line {
+      background: rgba(0,0,0,0.25);
+      border-radius: 1px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e293b;
+      border: 1px solid rgba(99,179,237,0.3);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      z-index: 1000;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      white-space: nowrap;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .stat-box {
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(99,179,237,0.12);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .keypad-btn {
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(99,179,237,0.15);
+      border-radius: 10px;
+      padding: 14px;
+      color: #e2e8f0;
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .keypad-btn:hover {
+      background: rgba(59,130,246,0.2);
+      border-color: rgba(99,179,237,0.4);
+    }
+
+    .keypad-btn:active { transform: scale(0.95); }
+
+    .keypad-btn:focus-visible {
+      outline: 2px solid #63b3ed;
+      outline-offset: 2px;
+    }
+
+    .scanline {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(99,179,237,0.015) 2px,
+        rgba(99,179,237,0.015) 4px
+      );
+      pointer-events: none;
+      border-radius: 24px;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full overflow-auto">
+  <div class="bg-grid"></div>
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+  <main class="relative z-10 flex items-center justify-center min-h-full py-8 px-4">
+   <div class="w-full max-w-4xl"><!-- ATM Card Header -->
+    <div class="atm-card p-6 mb-6">
+     <div class="scanline"></div>
+     <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4"><!-- Chip -->
+       <div class="chip" aria-hidden="true">
+        <div class="chip-lines">
+         <div class="chip-line"></div>
+         <div class="chip-line"></div>
+         <div class="chip-line"></div>
+        </div>
+       </div>
+       <div>
+        <div id="bank-name-display" class="text-sm font-bold tracking-widest text-blue-300 uppercase">
+         EasyBank.ltd
+        </div>
+        <div id="welcome-display" class="text-xs text-slate-500 mono">
+         Welcome Back
+        </div>
+       </div>
+      </div>
+      <div class="flex items-center gap-2">
+       <div class="w-8 h-8 rounded-full bg-red-500 opacity-70" aria-hidden="true"></div>
+       <div class="w-8 h-8 rounded-full bg-yellow-500 opacity-70 -ml-4" aria-hidden="true"></div>
+      </div>
+     </div><!-- Balance Display -->
+     <div class="balance-display" role="region" aria-label="Account Balance">
+      <div class="section-title">
+       Available Balance
+      </div>
+      <div id="balance-display" class="balance-amount">
+       $1,000.00
+      </div>
+      <div class="text-xs text-slate-500 mono mt-1">
+       **** **** **** 4892
+      </div>
+     </div>
+    </div><!-- Main Content -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4"><!-- Menu Sidebar -->
+     <nav class="md:col-span-2 glow-card p-5" aria-label="ATM Menu">
+      <div class="section-title">
+       ATM Services
+      </div>
+      <div class="flex flex-col gap-2" role="list"><button class="menu-btn" id="btn-balance" onclick="showPanel('balance')" role="listitem" aria-label="Check Balance">
+        <div class="btn-icon" style="background: rgba(59,130,246,0.15);"><i data-lucide="eye" style="width:16px;height:16px;color:#60a5fa;"></i>
+        </div><span>Check Balance</span> <i data-lucide="chevron-right" style="width:14px;height:14px;color:#475569;margin-left:auto;"></i> </button> <button class="menu-btn" id="btn-deposit" onclick="showPanel('deposit')" role="listitem" aria-label="Deposit Money">
+        <div class="btn-icon" style="background: rgba(52,211,153,0.15);"><i data-lucide="arrow-down-circle" style="width:16px;height:16px;color:#34d399;"></i>
+        </div><span>Deposit</span> <i data-lucide="chevron-right" style="width:14px;height:14px;color:#475569;margin-left:auto;"></i> </button> <button class="menu-btn" id="btn-withdraw" onclick="showPanel('withdraw')" role="listitem" aria-label="Withdraw Money">
+        <div class="btn-icon" style="background: rgba(251,191,36,0.15);"><i data-lucide="arrow-up-circle" style="width:16px;height:16px;color:#fbbf24;"></i>
+        </div><span>Withdraw</span> <i data-lucide="chevron-right" style="width:14px;height:14px;color:#475569;margin-left:auto;"></i> </button> <button class="menu-btn" id="btn-history" onclick="showPanel('history')" role="listitem" aria-label="Transaction History">
+        <div class="btn-icon" style="background: rgba(167,139,250,0.15);"><i data-lucide="list" style="width:16px;height:16px;color:#a78bfa;"></i>
+        </div><span>Transaction History</span> <i data-lucide="chevron-right" style="width:14px;height:14px;color:#475569;margin-left:auto;"></i> </button>
+       <div class="mt-3 pt-3" style="border-top: 1px solid rgba(99,179,237,0.1);"><button class="menu-btn" id="btn-reset" onclick="confirmReset()" role="listitem" aria-label="Reset ATM Session">
+         <div class="btn-icon" style="background: rgba(239,68,68,0.15);"><i data-lucide="refresh-cw" style="width:16px;height:16px;color:#f87171;"></i>
+         </div><span style="color:#f87171;">Reset Session</span> </button>
+       </div>
+      </div>
+     </nav><!-- Panels -->
+     <div class="md:col-span-3 glow-card p-5"><!-- Default / Balance Panel -->
+      <div id="panel-balance" class="panel active" role="region" aria-label="Balance Information">
+       <h2 class="text-lg font-bold text-slate-200 mb-1">Account Overview</h2>
+       <p class="text-slate-500 text-sm mb-5">Your current financial summary</p>
+       <div class="balance-display mb-4">
+        <div class="section-title">
+         Current Balance
+        </div>
+        <div id="balance-main" class="balance-amount">
+         $1,000.00
+        </div>
+       </div>
+       <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="stat-box">
+         <div class="section-title" style="margin-bottom:4px;">
+          Total Deposited
+         </div>
+         <div id="stat-deposited" class="mono text-lg font-medium text-emerald-400">
+          $0.00
+         </div>
+        </div>
+        <div class="stat-box">
+         <div class="section-title" style="margin-bottom:4px;">
+          Total Withdrawn
+         </div>
+         <div id="stat-withdrawn" class="mono text-lg font-medium text-yellow-400">
+          $0.00
+         </div>
+        </div>
+       </div>
+       <div class="stat-box">
+        <div class="section-title" style="margin-bottom:4px;">
+         Total Transactions
+        </div>
+        <div id="stat-count" class="mono text-2xl font-medium text-blue-400">
+         0
+        </div>
+       </div>
+      </div><!-- Deposit Panel -->
+      <div id="panel-deposit" class="panel" role="region" aria-label="Deposit Money">
+       <h2 class="text-lg font-bold text-slate-200 mb-1">Deposit Funds</h2>
+       <p class="text-slate-500 text-sm mb-5">Enter the amount you'd like to deposit</p>
+       <div class="mb-4"><label for="deposit-input" class="section-title block mb-2">Amount</label>
+        <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 mono font-medium text-lg">৳</span> <input id="deposit-input" class="atm-input" style="padding-left: 32px;" type="number" min="0.01" step="0.01" placeholder="0.00" aria-label="Deposit amount in Taka">
+        </div>
+       </div><!-- Quick amounts -->
+       <div class="section-title">
+        Quick Amounts
+       </div>
+       <div class="grid grid-cols-4 gap-2 mb-5"><button class="keypad-btn" onclick="setAmount('deposit-input', 20)" aria-label="Deposit 20 TK">৳২০</button> <button class="keypad-btn" onclick="setAmount('deposit-input', 50)" aria-label="Deposit 50 TK">৳৫০</button> <button class="keypad-btn" onclick="setAmount('deposit-input', 100)" aria-label="Deposit 100 TK">৳১००</button> <button class="keypad-btn" onclick="setAmount('deposit-input', 500)" aria-label="Deposit 500 TK">৳৫००</button>
+       </div>
+       <div class="flex gap-3"><button class="action-btn btn-primary flex-1" onclick="doDeposit()"> <span class="flex items-center justify-center gap-2"> <i data-lucide="arrow-down-circle" style="width:16px;height:16px;"></i> Deposit </span> </button> <button class="action-btn btn-secondary" onclick="showPanel('balance')" aria-label="Cancel deposit">Cancel</button>
+       </div>
+      </div><!-- Withdraw Panel -->
+      <div id="panel-withdraw" class="panel" role="region" aria-label="Withdraw Money">
+       <h2 class="text-lg font-bold text-slate-200 mb-1">Withdraw Funds</h2>
+       <p class="text-slate-500 text-sm mb-5">Enter the amount you'd like to withdraw</p>
+       <div class="mb-4"><label for="withdraw-input" class="section-title block mb-2">Amount</label>
+        <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 mono font-medium text-lg">৳</span> <input id="withdraw-input" class="atm-input" style="padding-left: 32px;" type="number" min="0.01" step="0.01" placeholder="0.00" aria-label="Withdrawal amount in Taka">
+        </div>
+       </div>
+       <div class="section-title">
+        Quick Amounts
+       </div>
+       <div class="grid grid-cols-4 gap-2 mb-5"><button class="keypad-btn" onclick="setAmount('withdraw-input', 20)" aria-label="Withdraw 20 TK">৳२०</button> <button class="keypad-btn" onclick="setAmount('withdraw-input', 50)" aria-label="Withdraw 50 TK">৳५०</button> <button class="keypad-btn" onclick="setAmount('withdraw-input', 100)" aria-label="Withdraw 100 TK">৳१००</button> <button class="keypad-btn" onclick="setAmount('withdraw-input', 200)" aria-label="Withdraw 200 TK">৳२००</button>
+       </div>
+       <div class="flex gap-3"><button class="action-btn btn-primary flex-1" onclick="doWithdraw()" style="background: linear-gradient(135deg, #f59e0b, #ef4444); box-shadow: 0 4px 15px rgba(245,158,11,0.3);"> <span class="flex items-center justify-center gap-2"> <i data-lucide="arrow-up-circle" style="width:16px;height:16px;"></i> Withdraw </span> </button> <button class="action-btn btn-secondary" onclick="showPanel('balance')" aria-label="Cancel withdrawal">Cancel</button>
+       </div>
+      </div><!-- History Panel -->
+      <div id="panel-history" class="panel" role="region" aria-label="Transaction History">
+       <div class="flex items-center justify-between mb-4">
+        <div>
+         <h2 class="text-lg font-bold text-slate-200">Transaction History</h2>
+         <p class="text-slate-500 text-sm">All your recent activity</p>
+        </div><span id="tx-count-badge" class="px-3 py-1 rounded-full text-xs font-bold mono" style="background: rgba(99,179,237,0.1); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2);">0 total</span>
+       </div>
+       <div id="tx-list" style="max-height: 280px; overflow-y: auto;" aria-label="List of transactions">
+        <div id="tx-empty" class="text-center py-10">
+         <div style="font-size:2rem;" aria-hidden="true">
+          🧾
+         </div>
+         <p class="text-slate-500 text-sm mt-2">No transactions yet</p>
+        </div>
+       </div>
+      </div><!-- Reset Confirm Panel -->
+      <div id="panel-reset" class="panel" role="region" aria-label="Reset Session">
+       <h2 class="text-lg font-bold text-red-400 mb-1">Reset Session?</h2>
+       <p class="text-slate-400 text-sm mb-6">This will reset your balance to ৳২,০০০.০০ and clear all transaction history. This cannot be undone.</p>
+       <div class="flex gap-3"><button class="action-btn flex-1" onclick="doReset()" style="background: linear-gradient(135deg, #ef4444, #dc2626); color:white; box-shadow: 0 4px 15px rgba(239,68,68,0.3);"> Yes, Reset </button> <button class="action-btn btn-secondary flex-1" onclick="showPanel('balance')">Cancel</button>
+       </div>
+      </div>
+     </div>
+    </div>
+    <p class="text-center text-slate-600 mono text-xs mt-6">ATM System • Secure Session Active</p>
+   </div>
+  </main>
+  <script>
+    // ── State ──
+    let balance = 1000;
+    let transactions = [];
+    let totalDeposited = 0;
+    let totalWithdrawn = 0;
+    const DEFAULT_BALANCE = 1000;
+
+    // ── Convert to Bangla numerals ──
+    function toBangla(num) {
+      const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+      return String(num).replace(/\d/g, d => banglaDigits[d]);
+    }
+
+    // ── Format currency in TK with Bangla numerals ──
+    function fmt(n) {
+      const formatted = n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return '৳' + toBangla(formatted);
+    }
+
+    // ── Update all balance displays ──
+    function updateBalanceUI() {
+      const formatted = fmt(balance);
+      document.getElementById('balance-display').textContent = formatted;
+      document.getElementById('balance-main').textContent = formatted;
+      document.getElementById('stat-deposited').textContent = fmt(totalDeposited);
+      document.getElementById('stat-withdrawn').textContent = fmt(totalWithdrawn);
+      document.getElementById('stat-count').textContent = transactions.length;
+    }
+
+    // ── Show a panel ──
+    function showPanel(name) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      // Clear inputs when switching panels
+      if (name === 'deposit') document.getElementById('deposit-input').value = '';
+      if (name === 'withdraw') document.getElementById('withdraw-input').value = '';
+      updateBalanceUI();
+      updateHistoryUI();
+    }
+
+    // ── Set quick amount ──
+    function setAmount(inputId, val) {
+      document.getElementById(inputId).value = val;
+      document.getElementById(inputId).focus();
+    }
+
+    // ── Toast notification ──
+    function showToast(msg, color) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.borderColor = color || 'rgba(99,179,237,0.4)';
+      t.style.color = color === 'rgba(52,211,153,0.8)' ? '#34d399' :
+                      color === 'rgba(251,191,36,0.8)' ? '#fbbf24' :
+                      color === 'rgba(239,68,68,0.8)' ? '#f87171' : '#63b3ed';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ── Deposit ──
+    function doDeposit() {
+      const input = document.getElementById('deposit-input');
+      const amount = parseFloat(input.value);
+      if (!amount || amount <= 0) {
+        showToast('⚠️ Amount must be greater than ৳০.', 'rgba(239,68,68,0.8)');
+        input.focus();
+        return;
+      }
+      balance += amount;
+      totalDeposited += amount;
+      transactions.push({ type: 'deposit', amount, time: new Date() });
+      showToast('✅ Deposited ' + fmt(amount) + ' successfully!', 'rgba(52,211,153,0.8)');
+      input.value = '';
+      updateBalanceUI();
+      updateHistoryUI();
+      showPanel('balance');
+    }
+
+    // ── Withdraw ──
+    function doWithdraw() {
+      const input = document.getElementById('withdraw-input');
+      const amount = parseFloat(input.value);
+      if (!amount || amount <= 0) {
+        showToast('⚠️ Amount must be greater than ৳०.', 'rgba(239,68,68,0.8)');
+        input.focus();
+        return;
+      }
+      if (amount > balance) {
+        showToast('❌ Insufficient balance!', 'rgba(239,68,68,0.8)');
+        input.focus();
+        return;
+      }
+      balance -= amount;
+      totalWithdrawn += amount;
+      transactions.push({ type: 'withdraw', amount, time: new Date() });
+      showToast('💸 Withdrew ' + fmt(amount) + ' successfully!', 'rgba(251,191,36,0.8)');
+      input.value = '';
+      updateBalanceUI();
+      updateHistoryUI();
+      showPanel('balance');
+    }
+
+    // ── Update History UI ──
+    function updateHistoryUI() {
+      const list = document.getElementById('tx-list');
+      const empty = document.getElementById('tx-empty');
+      const badge = document.getElementById('tx-count-badge');
+
+      badge.textContent = transactions.length + ' total';
+
+      if (transactions.length === 0) {
+        empty.style.display = 'block';
+        // Remove all transaction items
+        list.querySelectorAll('.transaction-item').forEach(el => el.remove());
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      // Rebuild (list is short in a typical session)
+      list.querySelectorAll('.transaction-item').forEach(el => el.remove());
+
+      const reversed = [...transactions].reverse();
+      reversed.forEach((tx, i) => {
+        const isDeposit = tx.type === 'deposit';
+        const timeStr = tx.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        item.setAttribute('role', 'listitem');
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${isDeposit ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'};">
+              <i data-lucide="${isDeposit ? 'arrow-down' : 'arrow-up'}" style="width:14px;height:14px;color:${isDeposit ? '#34d399' : '#fbbf24'};"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm text-slate-200">${isDeposit ? 'Deposit' : 'Withdrawal'}</div>
+              <div class="mono text-xs text-slate-500">${timeStr}</div>
+            </div>
+          </div>
+          <div class="mono font-medium text-sm ${isDeposit ? 'text-emerald-400' : 'text-yellow-400'}">
+            ${isDeposit ? '+' : '-'}${fmt(tx.amount)}
+          </div>
+        `;
+        list.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    // ── Confirm reset ──
+    function confirmReset() {
+      showPanel('reset');
+    }
+
+    // ── Do reset ──
+    function doReset() {
+      balance = DEFAULT_BALANCE;
+      totalDeposited = 0;
+      totalWithdrawn = 0;
+      transactions = [];
+      showToast('🔄 Session reset to ৳২,০০০.০০', 'rgba(99,179,237,0.8)');
+      showPanel('balance');
+    }
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', (e) => {
+      const active = document.querySelector('.panel.active');
+      if (!active) return;
+      if (e.key === 'Enter') {
+        if (active.id === 'panel-deposit') doDeposit();
+        else if (active.id === 'panel-withdraw') doWithdraw();
+      }
+      if (e.key === 'Escape') showPanel('balance');
+    });
+
+    // ── Element SDK init ──
+    const defaultConfig = {
+      bank_name: 'EasyBank.ltd',
+      welcome_message: 'Welcome Back',
+      starting_balance: '1000'
+    };
+
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => {
+        document.getElementById('bank-name-display').textContent =
+          config.bank_name || defaultConfig.bank_name;
+        document.getElementById('welcome-display').textContent =
+          config.welcome_message || defaultConfig.welcome_message;
+
+        const newBal = parseFloat(config.starting_balance) || 1000;
+        // Only apply if there are no transactions yet (session start)
+        if (transactions.length === 0) {
+          balance = newBal;
+          updateBalanceUI();
+        }
+      },
+      mapToCapabilities: (config) => ({
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      }),
+      mapToEditPanelValues: (config) => new Map([
+        ['bank_name', config.bank_name || defaultConfig.bank_name],
+        ['welcome_message', config.welcome_message || defaultConfig.welcome_message],
+        ['starting_balance', config.starting_balance || defaultConfig.starting_balance]
+      ])
+    });
+
+    // ── Init ──
+    updateBalanceUI();
+    lucide.createIcons();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e58cabdc19a8620',t:'MTc3NTA1OTA3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
